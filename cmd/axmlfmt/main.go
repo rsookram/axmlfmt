@@ -19,8 +19,9 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"io"
 	"os"
+
+	"github.com/rsookram/axmlfmt/internal/parse"
 )
 
 func main() {
@@ -33,24 +34,16 @@ func main() {
 	decoder := xml.NewDecoder(r)
 
 	indent := "    "
-	formatXml(decoder, indent)
+
+	elements := parse.ReadXml(decoder)
+	printFormattedXml(elements, indent)
 }
 
-func formatXml(decoder *xml.Decoder, indent string) {
-	stack := make([]xml.StartElement, 0)
+func printFormattedXml(elements []parse.Element, indent string) {
+	for _, ele := range elements {
+		depth := ele.Depth
 
-	for t, err := decoder.Token(); ; t, err = decoder.Token() {
-		if err == io.EOF {
-			return
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
-			return
-		}
-
-		depth := len(stack)
-
-		switch token := t.(type) {
+		switch token := ele.Token.(type) {
 		case xml.StartElement:
 			fmt.Printf(duplicate(indent, depth))
 			fmt.Printf("<%s\n", token.Name.Local)
@@ -63,15 +56,15 @@ func formatXml(decoder *xml.Decoder, indent string) {
 					fmt.Printf("\n")
 				}
 			}
-			fmt.Printf(">\n")
 
-			stack = append(stack, token)
+			if ele.ChildCount > 0 {
+				fmt.Printf(">\n")
+			} else {
+				fmt.Printf("/>\n")
+			}
 		case xml.EndElement:
-			start := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
-			newDepth := len(stack)
-			fmt.Printf(duplicate(indent, newDepth))
-			fmt.Printf("</%s>\n", start.Name.Local)
+			fmt.Printf(duplicate(indent, depth))
+			fmt.Printf("</%s>\n", token.Name.Local)
 		case xml.CharData:
 			// TODO: Need to handle this for string resources
 		case xml.Comment:
