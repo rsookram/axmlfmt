@@ -16,8 +16,99 @@ limitations under the License.
 
 package main
 
-import "fmt"
+import (
+	"encoding/xml"
+	"fmt"
+	"io"
+	"os"
+)
 
 func main() {
-	fmt.Println("it begins")
+	r, err := os.Open("view_main.xml")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		return
+	}
+
+	decoder := xml.NewDecoder(r)
+
+	indent := "    "
+	formatXml(decoder, indent)
+}
+
+func formatXml(decoder *xml.Decoder, indent string) {
+	stack := make([]xml.StartElement, 0)
+
+	for t, err := decoder.Token(); ; t, err = decoder.Token() {
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, err.Error())
+			return
+		}
+
+		depth := len(stack)
+
+		switch token := t.(type) {
+		case xml.StartElement:
+			fmt.Printf(duplicate(indent, depth))
+			fmt.Printf("<%s\n", token.Name.Local)
+
+			attrIndent := duplicate(indent, depth+1)
+			attrs := token.Attr
+			for i, a := range attrs {
+				fmt.Printf("%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
+				if i != len(attrs)-1 {
+					fmt.Printf("\n")
+				}
+			}
+			fmt.Printf(">\n")
+
+			stack = append(stack, token)
+		case xml.EndElement:
+			start := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			newDepth := len(stack)
+			fmt.Printf(duplicate(indent, newDepth))
+			fmt.Printf("</%s>\n", start.Name.Local)
+		case xml.CharData:
+			// TODO: Need to handle this for string resources
+		case xml.Comment:
+			fmt.Printf("\n")
+			fmt.Printf(duplicate(indent, depth))
+			fmt.Printf("<--%s-->\n", string(token))
+		case xml.ProcInst:
+			fmt.Printf("<?%s %s?>\n", token.Target, string(token.Inst))
+		}
+	}
+}
+
+func cleanAttrName(n xml.Name) string {
+	space := n.Space
+	if space == "" {
+		// Attributes not in a namespace such as style
+		return n.Local
+	}
+
+	switch space {
+	case "http://schemas.android.com/apk/res/android":
+		space = "android"
+	case "http://schemas.android.com/apk/res-auto":
+		space = "app"
+	case "http://schemas.android.com/tools":
+		space = "tools"
+	}
+
+	return fmt.Sprintf("%s:%s", space, n.Local)
+}
+
+func duplicate(s string, n int) string {
+	ret := ""
+
+	for i := 0; i < n; i++ {
+		ret += s
+	}
+
+	return ret
 }
