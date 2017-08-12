@@ -31,7 +31,7 @@ func PrintXml(elements []parse.Element, indent string) {
 
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
-			printStartElement(token.Name.Local, token.Attr, ele.ChildCount > 0, depth, indent)
+			printStartElement(token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, depth, indent)
 		case xml.EndElement:
 			printEndElement(token.Name.Local, depth, indent)
 		case xml.CharData:
