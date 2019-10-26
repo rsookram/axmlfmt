@@ -3,6 +3,7 @@ package printer
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 
 	"github.com/rsookram/axmlfmt/internal/parse"
 )
@@ -17,7 +18,7 @@ func New(indent string) Printer {
 	}
 }
 
-func (p Printer) PrintXml(elements []parse.Element) {
+func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
 	newLinePositions := determineNewLinePositions(elements)
 
 	for i, ele := range elements {
@@ -25,19 +26,19 @@ func (p Printer) PrintXml(elements []parse.Element) {
 
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
-			p.printStartElement(token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, depth)
+			p.startElement(w, token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, depth)
 		case xml.EndElement:
-			p.printEndElement(token.Name.Local, depth)
+			p.endElement(w, token.Name.Local, depth)
 		case xml.CharData:
 			// TODO: Need to handle this for string resources
 		case xml.Comment:
-			p.printComment(string(token), depth)
+			p.comment(w, string(token), depth)
 		case xml.ProcInst:
-			printProcInst(token.Target, string(token.Inst))
+			printProcInst(w, token.Target, string(token.Inst))
 		}
 
 		if newLinePositions[i] {
-			fmt.Println()
+			fmt.Fprintln(w)
 		}
 	}
 }
@@ -68,37 +69,37 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 	return positions
 }
 
-func (p Printer) printStartElement(name string, attrs []xml.Attr, hasChildren bool, depth int) {
-	fmt.Printf(duplicate(p.indent, depth))
-	fmt.Printf("<%s\n", name)
+func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChildren bool, depth int) {
+	fmt.Fprintf(w, duplicate(p.indent, depth))
+	fmt.Fprintf(w, "<%s\n", name)
 
 	attrIndent := duplicate(p.indent, depth+1)
 	for i, a := range attrs {
-		fmt.Printf("%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
+		fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
 		if i != len(attrs)-1 {
-			fmt.Printf("\n")
+			fmt.Fprintf(w, "\n")
 		}
 	}
 
 	if hasChildren {
-		fmt.Printf(">\n")
+		fmt.Fprintf(w, ">\n")
 	} else {
-		fmt.Printf("/>\n")
+		fmt.Fprintf(w, "/>\n")
 	}
 }
 
-func (p Printer) printEndElement(name string, depth int) {
-	fmt.Printf(duplicate(p.indent, depth))
-	fmt.Printf("</%s>\n", name)
+func (p Printer) endElement(w io.Writer, name string, depth int) {
+	fmt.Fprintf(w, duplicate(p.indent, depth))
+	fmt.Fprintf(w, "</%s>\n", name)
 }
 
-func (p Printer) printComment(body string, depth int) {
-	fmt.Printf(duplicate(p.indent, depth))
-	fmt.Printf("<--%s-->\n", body)
+func (p Printer) comment(w io.Writer, body string, depth int) {
+	fmt.Fprintf(w, duplicate(p.indent, depth))
+	fmt.Fprintf(w, "<--%s-->\n", body)
 }
 
-func printProcInst(target string, inst string) {
-	fmt.Printf("<?%s %s?>\n", target, inst)
+func printProcInst(w io.Writer, target string, inst string) {
+	fmt.Fprintf(w, "<?%s %s?>\n", target, inst)
 }
 
 func cleanAttrName(n xml.Name) string {

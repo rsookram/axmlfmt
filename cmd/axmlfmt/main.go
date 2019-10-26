@@ -9,6 +9,8 @@ import (
 	"github.com/rsookram/axmlfmt/internal/printer"
 )
 
+const indent = "    "
+
 func main() {
 	r, err := os.Open("view_main.xml")
 	if err != nil {
@@ -18,8 +20,6 @@ func main() {
 
 	decoder := xml.NewDecoder(r)
 
-	indent := "    "
-
 	elements, err := parse.ReadXML(decoder)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -27,5 +27,5 @@ func main() {
 	}
 
 	p := printer.New(indent)
-	p.PrintXml(elements)
+	p.Fprint(os.Stdout, elements)
 }
