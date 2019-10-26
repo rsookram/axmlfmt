@@ -48,7 +48,7 @@ func PrintXml(elements []parse.Element, indent string) {
 	}
 }
 
-// Returns whether a new lines should be printed after the element at a given
+// Returns whether a new line should be printed after the element at a given
 // position
 func determineNewLinePositions(elements []parse.Element) []bool {
 	positions := make([]bool, len(elements))

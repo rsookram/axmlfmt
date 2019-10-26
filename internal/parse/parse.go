@@ -2,23 +2,21 @@ package parse
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io"
-	"os"
 )
 
-func ReadXml(decoder *xml.Decoder) []Element {
+// ReadXML processes tokens from the given decoder and returns a slice of
+// Elements corresponding to the tokens
+func ReadXML(decoder *xml.Decoder) ([]Element, error) {
 	stack := make([]*Element, 0)
 	elements := make([]*Element, 0)
 
 	for t, err := decoder.Token(); ; t, err = decoder.Token() {
 		if err == io.EOF {
-			return elementsCopy(elements)
+			return elementsCopy(elements), nil
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
-			// TODO: Also return error
-			return []Element{}
+			return nil, err
 		}
 
 		depth := len(stack)
@@ -72,8 +70,6 @@ func ReadXml(decoder *xml.Decoder) []Element {
 			elements = append(elements, &ele)
 		}
 	}
-
-	return elementsCopy(elements)
 }
 
 func elementsCopy(ele []*Element) []Element {

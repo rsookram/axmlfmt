@@ -36,6 +36,10 @@ func main() {
 
 	indent := "    "
 
-	elements := parse.ReadXml(decoder)
+	elements, err := parse.ReadXML(decoder)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		return
+	}
 	format.PrintXml(elements, indent)
 }
