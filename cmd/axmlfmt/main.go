@@ -12,8 +12,8 @@ import (
 func main() {
 	r, err := os.Open("view_main.xml")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
 	}
 
 	decoder := xml.NewDecoder(r)
@@ -22,8 +22,8 @@ func main() {
 
 	elements, err := parse.ReadXML(decoder)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(2)
 	}
 	format.PrintXml(elements, indent)
 }
