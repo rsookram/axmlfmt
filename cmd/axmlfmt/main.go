@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rsookram/axmlfmt/internal/format"
 	"github.com/rsookram/axmlfmt/internal/parse"
+	"github.com/rsookram/axmlfmt/internal/printer"
 )
 
 func main() {
@@ -25,5 +25,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(2)
 	}
-	format.PrintXml(elements, indent)
+	printer.PrintXml(elements, indent)
 }
