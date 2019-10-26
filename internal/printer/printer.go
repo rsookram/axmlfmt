@@ -7,7 +7,17 @@ import (
 	"github.com/rsookram/axmlfmt/internal/parse"
 )
 
-func PrintXml(elements []parse.Element, indent string) {
+type Printer struct {
+	indent string
+}
+
+func New(indent string) Printer {
+	return Printer{
+		indent: indent,
+	}
+}
+
+func (p Printer) PrintXml(elements []parse.Element) {
 	newLinePositions := determineNewLinePositions(elements)
 
 	for i, ele := range elements {
@@ -15,13 +25,13 @@ func PrintXml(elements []parse.Element, indent string) {
 
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
-			printStartElement(token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, depth, indent)
+			p.printStartElement(token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, depth)
 		case xml.EndElement:
-			printEndElement(token.Name.Local, depth, indent)
+			p.printEndElement(token.Name.Local, depth)
 		case xml.CharData:
 			// TODO: Need to handle this for string resources
 		case xml.Comment:
-			printComment(string(token), depth, indent)
+			p.printComment(string(token), depth)
 		case xml.ProcInst:
 			printProcInst(token.Target, string(token.Inst))
 		}
@@ -58,11 +68,11 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 	return positions
 }
 
-func printStartElement(name string, attrs []xml.Attr, hasChildren bool, depth int, indent string) {
-	fmt.Printf(duplicate(indent, depth))
+func (p Printer) printStartElement(name string, attrs []xml.Attr, hasChildren bool, depth int) {
+	fmt.Printf(duplicate(p.indent, depth))
 	fmt.Printf("<%s\n", name)
 
-	attrIndent := duplicate(indent, depth+1)
+	attrIndent := duplicate(p.indent, depth+1)
 	for i, a := range attrs {
 		fmt.Printf("%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
 		if i != len(attrs)-1 {
@@ -77,13 +87,13 @@ func printStartElement(name string, attrs []xml.Attr, hasChildren bool, depth in
 	}
 }
 
-func printEndElement(name string, depth int, indent string) {
-	fmt.Printf(duplicate(indent, depth))
+func (p Printer) printEndElement(name string, depth int) {
+	fmt.Printf(duplicate(p.indent, depth))
 	fmt.Printf("</%s>\n", name)
 }
 
-func printComment(body string, depth int, indent string) {
-	fmt.Printf(duplicate(indent, depth))
+func (p Printer) printComment(body string, depth int) {
+	fmt.Printf(duplicate(p.indent, depth))
 	fmt.Printf("<--%s-->\n", body)
 }
 

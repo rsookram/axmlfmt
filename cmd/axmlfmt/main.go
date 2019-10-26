@@ -25,5 +25,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(2)
 	}
-	printer.PrintXml(elements, indent)
+
+	p := printer.New(indent)
+	p.PrintXml(elements)
 }
