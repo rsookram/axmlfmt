@@ -71,11 +71,31 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 
 func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChildren bool, depth int) {
 	fmt.Fprintf(w, duplicate(p.indent, depth))
-	fmt.Fprintf(w, "<%s\n", name)
+
+	// Elements without attrs look like `<requestFocus/>` or `<resources>`
+	// and elements with one attr look like
+	// `<string name="app_name">` or `<menu xmlns:android="...">`
+	hasAttrs := len(attrs) == 0
+	isSingleAttr := len(attrs) == 1
+	if hasAttrs {
+		fmt.Fprintf(w, "<%s", name)
+	} else {
+		if isSingleAttr {
+			fmt.Fprintf(w, "<%s", name)
+		} else {
+			fmt.Fprintf(w, "<%s\n", name)
+		}
+	}
 
 	attrIndent := duplicate(p.indent, depth+1)
 	for i, a := range attrs {
-		fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
+		if isSingleAttr {
+			fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
+		} else {
+			fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
+		}
+
+		// The last attribute is on the same line as the ">"
 		if i != len(attrs)-1 {
 			fmt.Fprintf(w, "\n")
 		}
