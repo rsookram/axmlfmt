@@ -43,8 +43,8 @@ func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
 	}
 }
 
-// Returns whether a new line should be printed after the element at a given
-// position
+// determineNewLinePositions returns whether a new line should be printed after
+// the element at a given position
 func determineNewLinePositions(elements []parse.Element) []bool {
 	positions := make([]bool, len(elements))
 
@@ -52,17 +52,12 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 		curr := elements[i].Token
 		next := elements[i+1].Token
 
-		switch c := curr.(type) {
-		case xml.StartElement:
-			switch n := next.(type) {
+		switch curr.(type) {
+		case xml.StartElement, xml.EndElement:
+			switch next.(type) {
 			case xml.StartElement, xml.Comment:
 				positions[i] = true
-			default:
-				_ = n
 			}
-
-		default:
-			_ = c
 		}
 	}
 
