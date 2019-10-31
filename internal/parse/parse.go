@@ -24,18 +24,18 @@ func ReadXML(decoder *xml.Decoder) ([]Element, error) {
 
 		switch token := t.(type) {
 		case xml.StartElement:
-			hasCharData := false
+			containsCharData := false
 			if depth > 0 {
 				parent := stack[len(stack)-1]
-				parent.ChildCount++
-				hasCharData = parent.HasCharData
+				parent.IsSelfClosing = false
+				containsCharData = parent.ContainsCharData
 			}
 
 			ele := Element{
-				Token:       xml.CopyToken(token),
-				Depth:       depth,
-				ChildCount:  0,
-				HasCharData: hasCharData,
+				Token:            xml.CopyToken(token),
+				Depth:            depth,
+				IsSelfClosing:    true,
+				ContainsCharData: containsCharData,
 			}
 			elements = append(elements, &ele)
 
@@ -46,14 +46,14 @@ func ReadXML(decoder *xml.Decoder) ([]Element, error) {
 			stack = stack[:len(stack)-1]
 
 			// No end is needed for empty nodes
-			if start.ChildCount > 0 || start.HasCharData {
+			if !start.IsSelfClosing || start.ContainsCharData {
 				newDepth := len(stack)
 
 				ele := Element{
-					Token:       xml.CopyToken(token),
-					Depth:       newDepth,
-					ChildCount:  0,
-					HasCharData: start.HasCharData,
+					Token:            xml.CopyToken(token),
+					Depth:            newDepth,
+					IsSelfClosing:    false,
+					ContainsCharData: start.ContainsCharData,
 				}
 				elements = append(elements, &ele)
 			}
@@ -61,27 +61,27 @@ func ReadXML(decoder *xml.Decoder) ([]Element, error) {
 			s := strings.TrimSpace(string(token))
 			if len(s) != 0 {
 				parent := stack[len(stack)-1]
-				parent.HasCharData = true
+				parent.ContainsCharData = true
 
 				ele := Element{
-					Token:      xml.CopyToken(xml.CharData(s)),
-					Depth:      len(stack),
-					ChildCount: 0,
+					Token:         xml.CopyToken(xml.CharData(s)),
+					Depth:         len(stack),
+					IsSelfClosing: false,
 				}
 				elements = append(elements, &ele)
 			}
 		case xml.Comment:
 			ele := Element{
-				Token:      xml.CopyToken(token),
-				Depth:      depth,
-				ChildCount: 0,
+				Token:         xml.CopyToken(token),
+				Depth:         depth,
+				IsSelfClosing: false,
 			}
 			elements = append(elements, &ele)
 		case xml.ProcInst:
 			ele := Element{
-				Token:      xml.CopyToken(token),
-				Depth:      depth,
-				ChildCount: 0,
+				Token:         xml.CopyToken(token),
+				Depth:         depth,
+				IsSelfClosing: false,
 			}
 			elements = append(elements, &ele)
 		}

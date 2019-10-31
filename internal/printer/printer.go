@@ -26,9 +26,9 @@ func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
 
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
-			p.startElement(w, token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, ele.HasCharData, depth)
+			p.startElement(w, token.Name.Local, sortAttrs(token.Attr), ele.IsSelfClosing, ele.ContainsCharData, depth)
 		case xml.EndElement:
-			p.endElement(w, token.Name.Local, ele.HasCharData, depth)
+			p.endElement(w, token.Name.Local, ele.ContainsCharData, depth)
 		case xml.CharData:
 			fmt.Fprint(w, string(token))
 		case xml.Comment:
@@ -64,7 +64,7 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 	return positions
 }
 
-func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChildren, hasCharData bool, depth int) {
+func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) {
 	fmt.Fprintf(w, duplicate(p.indent, depth))
 
 	// Elements without attrs look like `<requestFocus/>` or `<resources>`
@@ -96,17 +96,17 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChi
 		}
 	}
 
-	if hasCharData {
+	if containsCharData {
 		fmt.Fprintf(w, ">")
-	} else if hasChildren {
+	} else if !isSelfClosing {
 		fmt.Fprintf(w, ">\n")
 	} else {
 		fmt.Fprintf(w, "/>\n")
 	}
 }
 
-func (p Printer) endElement(w io.Writer, name string, hasCharData bool, depth int) {
-	if !hasCharData {
+func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int) {
+	if !containsCharData {
 		fmt.Fprintf(w, duplicate(p.indent, depth))
 	}
 	fmt.Fprintf(w, "</%s>\n", name)
