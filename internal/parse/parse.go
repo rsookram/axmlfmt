@@ -3,6 +3,7 @@ package parse
 import (
 	"encoding/xml"
 	"io"
+	"strings"
 )
 
 // ReadXML processes tokens from the given decoder and returns a slice of
@@ -23,15 +24,18 @@ func ReadXML(decoder *xml.Decoder) ([]Element, error) {
 
 		switch token := t.(type) {
 		case xml.StartElement:
+			hasCharData := false
 			if depth > 0 {
 				parent := stack[len(stack)-1]
 				parent.ChildCount++
+				hasCharData = parent.HasCharData
 			}
 
 			ele := Element{
-				Token:      xml.CopyToken(token),
-				Depth:      depth,
-				ChildCount: 0,
+				Token:       xml.CopyToken(token),
+				Depth:       depth,
+				ChildCount:  0,
+				HasCharData: hasCharData,
 			}
 			elements = append(elements, &ele)
 
@@ -42,18 +46,30 @@ func ReadXML(decoder *xml.Decoder) ([]Element, error) {
 			stack = stack[:len(stack)-1]
 
 			// No end is needed for empty nodes
-			if start.ChildCount > 0 {
+			if start.ChildCount > 0 || start.HasCharData {
 				newDepth := len(stack)
 
 				ele := Element{
-					Token:      xml.CopyToken(token),
-					Depth:      newDepth,
-					ChildCount: 0,
+					Token:       xml.CopyToken(token),
+					Depth:       newDepth,
+					ChildCount:  0,
+					HasCharData: start.HasCharData,
 				}
 				elements = append(elements, &ele)
 			}
 		case xml.CharData:
-			// TODO: Need to handle this for string resources
+			s := strings.TrimSpace(string(token))
+			if len(s) != 0 {
+				parent := stack[len(stack)-1]
+				parent.HasCharData = true
+
+				ele := Element{
+					Token:      xml.CopyToken(xml.CharData(s)),
+					Depth:      len(stack),
+					ChildCount: 0,
+				}
+				elements = append(elements, &ele)
+			}
 		case xml.Comment:
 			ele := Element{
 				Token:      xml.CopyToken(token),

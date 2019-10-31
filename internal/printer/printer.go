@@ -26,11 +26,11 @@ func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
 
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
-			p.startElement(w, token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, depth)
+			p.startElement(w, token.Name.Local, sortAttrs(token.Attr), ele.ChildCount > 0, ele.HasCharData, depth)
 		case xml.EndElement:
-			p.endElement(w, token.Name.Local, depth)
+			p.endElement(w, token.Name.Local, ele.HasCharData, depth)
 		case xml.CharData:
-			// TODO: Need to handle this for string resources
+			fmt.Fprint(w, string(token))
 		case xml.Comment:
 			p.comment(w, string(token), depth)
 		case xml.ProcInst:
@@ -64,7 +64,7 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 	return positions
 }
 
-func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChildren bool, depth int) {
+func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChildren, hasCharData bool, depth int) {
 	fmt.Fprintf(w, duplicate(p.indent, depth))
 
 	// Elements without attrs look like `<requestFocus/>` or `<resources>`
@@ -96,15 +96,19 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, hasChi
 		}
 	}
 
-	if hasChildren {
+	if hasCharData {
+		fmt.Fprintf(w, ">")
+	} else if hasChildren {
 		fmt.Fprintf(w, ">\n")
 	} else {
 		fmt.Fprintf(w, "/>\n")
 	}
 }
 
-func (p Printer) endElement(w io.Writer, name string, depth int) {
-	fmt.Fprintf(w, duplicate(p.indent, depth))
+func (p Printer) endElement(w io.Writer, name string, hasCharData bool, depth int) {
+	if !hasCharData {
+		fmt.Fprintf(w, duplicate(p.indent, depth))
+	}
 	fmt.Fprintf(w, "</%s>\n", name)
 }
 
