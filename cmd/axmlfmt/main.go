@@ -12,6 +12,8 @@ import (
 
 const indent = "    "
 
+var write = flag.Bool("w", false, "write result to (source) file instead of stdout")
+
 func main() {
 	flag.Parse()
 
@@ -33,6 +35,27 @@ func main() {
 		}
 
 		p := printer.New(indent)
-		p.Fprint(os.Stdout, elements)
+		err = writeOutput(p, elements, *write, name)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(3)
+		}
 	}
+}
+
+func writeOutput(p printer.Printer, elements []parse.Element, write bool, inputFileName string) error {
+	if !write {
+		p.Fprint(os.Stdout, elements)
+		return nil
+	}
+
+	f, err := os.Create(inputFileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	p.Fprint(f, elements)
+
+	return nil
 }
