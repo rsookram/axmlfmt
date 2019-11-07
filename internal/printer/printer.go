@@ -65,7 +65,7 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 }
 
 func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) {
-	fmt.Fprintf(w, duplicate(p.indent, depth))
+	fmt.Fprint(w, duplicate(p.indent, depth))
 
 	// Elements without attrs look like `<requestFocus/>` or `<resources>`
 	// and elements with one attr look like
@@ -107,13 +107,13 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelf
 
 func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int) {
 	if !containsCharData {
-		fmt.Fprintf(w, duplicate(p.indent, depth))
+		fmt.Fprint(w, duplicate(p.indent, depth))
 	}
 	fmt.Fprintf(w, "</%s>\n", name)
 }
 
 func (p Printer) comment(w io.Writer, body string, depth int) {
-	fmt.Fprintf(w, duplicate(p.indent, depth))
+	fmt.Fprint(w, duplicate(p.indent, depth))
 	fmt.Fprintf(w, "<--%s-->\n", body)
 }
 
