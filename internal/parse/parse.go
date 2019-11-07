@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// ReadXML processes tokens from the given decoder and returns a slice of
+// ReadXML processes tokens from the given reader and returns a slice of
 // Elements corresponding to the tokens
-func ReadXML(decoder *xml.Decoder) ([]Element, error) {
+func ReadXML(reader xml.TokenReader) ([]Element, error) {
 	stack := make([]*Element, 0)
 	elements := make([]*Element, 0)
 
-	for t, err := decoder.Token(); ; t, err = decoder.Token() {
+	for t, err := reader.Token(); ; t, err = reader.Token() {
 		if err == io.EOF {
 			return elementsCopy(elements), nil
 		}
