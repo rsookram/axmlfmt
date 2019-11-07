@@ -67,7 +67,7 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) {
 	fmt.Fprint(w, duplicate(p.indent, depth))
 
-	// Elements without attrs look like `<requestFocus/>` or `<resources>`
+	// Elements without attrs look like `<requestFocus />` or `<resources>`
 	// and elements with one attr look like
 	// `<string name="app_name">` or `<menu xmlns:android="...">`
 	hasAttrs := len(attrs) == 0
@@ -101,7 +101,7 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelf
 	} else if !isSelfClosing {
 		fmt.Fprintf(w, ">\n")
 	} else {
-		fmt.Fprintf(w, "/>\n")
+		fmt.Fprintf(w, " />\n")
 	}
 }
 
