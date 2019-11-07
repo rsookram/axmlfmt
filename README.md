@@ -13,7 +13,7 @@ $ go get -u github.com/rsookram/axmlfmt/cmd/axmlfmt
 License
 -------
 
-    Copyright 2017 Rashad Sookram
+    Copyright 2019 Rashad Sookram
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
