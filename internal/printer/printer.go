@@ -114,7 +114,7 @@ func (p Printer) endElement(w io.Writer, name string, containsCharData bool, dep
 
 func (p Printer) comment(w io.Writer, body string, depth int) {
 	fmt.Fprint(w, duplicate(p.indent, depth))
-	fmt.Fprintf(w, "<--%s-->\n", body)
+	fmt.Fprintf(w, "<!--%s-->\n", body)
 }
 
 func printProcInst(w io.Writer, target string, inst string) {
