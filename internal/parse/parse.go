@@ -71,6 +71,11 @@ func ReadXML(reader xml.TokenReader) ([]Element, error) {
 				elements = append(elements, &ele)
 			}
 		case xml.Comment:
+			if depth > 0 {
+				parent := stack[len(stack)-1]
+				parent.IsSelfClosing = false
+			}
+
 			ele := Element{
 				Token:         xml.CopyToken(token),
 				Depth:         depth,
