@@ -42,3 +42,13 @@ func TestComment(t *testing.T) {
 		}
 	}
 }
+
+func TestProcInst(t *testing.T) {
+	w := &strings.Builder{}
+	printProcInst(w, "xml", `version="1.0" encoding="utf-8"`)
+
+	expected := `<?xml version="1.0" encoding="utf-8"?>` + "\n"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
