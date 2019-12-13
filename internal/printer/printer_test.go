@@ -7,6 +7,18 @@ import (
 
 const indent = "    "
 
+func TestCharData(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	p.charData(w, "a string")
+
+	expected := "a string"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
 func TestComment(t *testing.T) {
 	p := New(indent)
 

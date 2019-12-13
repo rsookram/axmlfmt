@@ -30,7 +30,7 @@ func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
 		case xml.EndElement:
 			p.endElement(w, token.Name.Local, ele.ContainsCharData, depth)
 		case xml.CharData:
-			fmt.Fprint(w, string(token))
+			p.charData(w, string(token))
 		case xml.Comment:
 			p.comment(w, string(token), depth)
 		case xml.ProcInst:
@@ -110,6 +110,10 @@ func (p Printer) endElement(w io.Writer, name string, containsCharData bool, dep
 		fmt.Fprint(w, duplicate(p.indent, depth))
 	}
 	fmt.Fprintf(w, "</%s>\n", name)
+}
+
+func (p Printer) charData(w io.Writer, value string) {
+	fmt.Fprint(w, value)
 }
 
 func (p Printer) comment(w io.Writer, body string, depth int) {
