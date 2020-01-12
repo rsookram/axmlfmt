@@ -41,6 +41,7 @@ func sortAttrs(attrs []xml.Attr) []xml.Attr {
 
 	return sorted
 }
+
 func less(fst, snd xml.Name) bool {
 	if fst.Space != snd.Space {
 		fstP, hasFst := indexOf(nsPriority, fst.Space)
