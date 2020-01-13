@@ -1,11 +1,42 @@
 package printer
 
 import (
+	"encoding/xml"
 	"strings"
 	"testing"
 )
 
 const indent = "    "
+
+func TestStartXLIFF(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	p.startXLIFF(
+		w,
+		[]xml.Attr{
+			{Name: xml.Name{Space: "", Local: "example"}, Value: "2"},
+			{Name: xml.Name{Space: "", Local: "id"}, Value: "quantity"},
+		},
+	)
+
+	expected := `<xliff:g example="2" id="quantity">`
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
+func TestEndXLIFF(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	p.endElement(w, "g", true, 2, true)
+
+	expected := "</xliff:g>"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
 
 func TestCharData(t *testing.T) {
 	p := New(indent)

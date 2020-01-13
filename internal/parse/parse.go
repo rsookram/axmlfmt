@@ -58,8 +58,8 @@ func ReadXML(reader xml.TokenReader) ([]Element, error) {
 				elements = append(elements, &ele)
 			}
 		case xml.CharData:
-			s := strings.TrimSpace(string(token))
-			if len(s) != 0 {
+			s := string(token)
+			if len(strings.TrimSpace(s)) != 0 {
 				parent := stack[len(stack)-1]
 				parent.ContainsCharData = true
 

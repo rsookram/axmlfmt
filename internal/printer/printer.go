@@ -26,9 +26,14 @@ func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
 
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
-			p.startElement(w, token.Name.Local, sortAttrs(token.Attr), ele.IsSelfClosing, ele.ContainsCharData, depth)
+			attrs := sortAttrs(token.Attr)
+			if isXLIFF(token.Name) {
+				p.startXLIFF(w, attrs)
+			} else {
+				p.startElement(w, token.Name.Local, attrs, ele.IsSelfClosing, ele.ContainsCharData, depth)
+			}
 		case xml.EndElement:
-			p.endElement(w, token.Name.Local, ele.ContainsCharData, depth)
+			p.endElement(w, token.Name.Local, ele.ContainsCharData, depth, isXLIFF(token.Name))
 		case xml.CharData:
 			p.charData(w, string(token))
 		case xml.Comment:
@@ -62,6 +67,10 @@ func determineNewLinePositions(elements []parse.Element) []bool {
 	}
 
 	return positions
+}
+
+func isXLIFF(name xml.Name) bool {
+	return name.Space == "urn:oasis:names:tc:xliff:document:1.2" && name.Local == "g"
 }
 
 func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) {
@@ -105,11 +114,25 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelf
 	}
 }
 
-func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int) {
+func (p Printer) startXLIFF(w io.Writer, attrs []xml.Attr) {
+	fmt.Fprintf(w, "<xliff:g")
+
+	for _, a := range attrs {
+		fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
+	}
+
+	fmt.Fprintf(w, ">")
+}
+
+func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int, isXLIFF bool) {
 	if !containsCharData {
 		fmt.Fprint(w, duplicate(p.indent, depth))
 	}
-	fmt.Fprintf(w, "</%s>\n", name)
+	if isXLIFF {
+		fmt.Fprintf(w, "</xliff:%s>", name)
+	} else {
+		fmt.Fprintf(w, "</%s>\n", name)
+	}
 }
 
 func (p Printer) charData(w io.Writer, value string) {
