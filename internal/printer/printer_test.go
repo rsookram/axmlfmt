@@ -8,6 +8,21 @@ import (
 
 const indent = "    "
 
+func TestStartElement(t *testing.T) {
+	p := New(indent)
+
+	{
+		w := &strings.Builder{}
+		err := p.startElement(w, "resources", []xml.Attr{}, false, false, 0)
+		requireNoError(t, err)
+
+		expected := "<resources>\n"
+		if w.String() != expected {
+			t.Errorf("got: %s, want %s", w.String(), expected)
+		}
+	}
+}
+
 func TestStartXLIFF(t *testing.T) {
 	p := New(indent)
 
