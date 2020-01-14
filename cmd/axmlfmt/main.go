@@ -45,17 +45,14 @@ func main() {
 
 func writeOutput(p printer.Printer, elements []parse.Element, write bool, inputFileName string) error {
 	if !write {
-		p.Fprint(os.Stdout, elements)
-		return nil
+		return p.Fprint(os.Stdout, elements)
 	}
 
 	f, err := os.Create(inputFileName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create %v: %v", inputFileName, err)
 	}
 	defer f.Close()
 
-	p.Fprint(f, elements)
-
-	return nil
+	return p.Fprint(f, elements)
 }

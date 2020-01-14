@@ -18,34 +18,41 @@ func New(indent string) Printer {
 	}
 }
 
-func (p Printer) Fprint(w io.Writer, elements []parse.Element) {
+func (p Printer) Fprint(w io.Writer, elements []parse.Element) error {
 	newLinePositions := determineNewLinePositions(elements)
 
 	for i, ele := range elements {
 		depth := ele.Depth
 
+		var err error
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
 			attrs := sortAttrs(token.Attr)
 			if isXLIFF(token.Name) {
-				p.startXLIFF(w, attrs)
+				err = p.startXLIFF(w, attrs)
 			} else {
-				p.startElement(w, token.Name.Local, attrs, ele.IsSelfClosing, ele.ContainsCharData, depth)
+				err = p.startElement(w, token.Name.Local, attrs, ele.IsSelfClosing, ele.ContainsCharData, depth)
 			}
 		case xml.EndElement:
-			p.endElement(w, token.Name.Local, ele.ContainsCharData, depth, isXLIFF(token.Name))
+			err = p.endElement(w, token.Name.Local, ele.ContainsCharData, depth, isXLIFF(token.Name))
 		case xml.CharData:
-			p.charData(w, string(token))
+			err = p.charData(w, string(token))
 		case xml.Comment:
-			p.comment(w, string(token), depth)
+			err = p.comment(w, string(token), depth)
 		case xml.ProcInst:
-			printProcInst(w, token.Target, string(token.Inst))
+			err = printProcInst(w, token.Target, string(token.Inst))
 		}
 
 		if newLinePositions[i] {
-			fmt.Fprintln(w)
+			_, err = fmt.Fprintln(w)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
+
+	return nil
 }
 
 // determineNewLinePositions returns whether a new line should be printed after
@@ -73,8 +80,11 @@ func isXLIFF(name xml.Name) bool {
 	return name.Space == "urn:oasis:names:tc:xliff:document:1.2" && name.Local == "g"
 }
 
-func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) {
-	fmt.Fprint(w, duplicate(p.indent, depth))
+func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) error {
+	_, err := fmt.Fprint(w, duplicate(p.indent, depth))
+	if err != nil {
+		return err
+	}
 
 	// Elements without attrs look like `<requestFocus />` or `<resources>`
 	// and elements with one attr look like
@@ -82,70 +92,99 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelf
 	hasAttrs := len(attrs) == 0
 	isSingleAttr := len(attrs) == 1
 	if hasAttrs {
-		fmt.Fprintf(w, "<%s", name)
+		_, err = fmt.Fprintf(w, "<%s", name)
 	} else {
 		if isSingleAttr {
-			fmt.Fprintf(w, "<%s", name)
+			_, err = fmt.Fprintf(w, "<%s", name)
 		} else {
-			fmt.Fprintf(w, "<%s\n", name)
+			_, err = fmt.Fprintf(w, "<%s\n", name)
 		}
+	}
+	if err != nil {
+		return err
 	}
 
 	attrIndent := duplicate(p.indent, depth+1)
 	for i, a := range attrs {
 		if isSingleAttr {
-			fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
+			_, err = fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
 		} else {
-			fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
+			_, err = fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
 		}
 
 		// The last attribute is on the same line as the ">"
 		if i != len(attrs)-1 {
-			fmt.Fprintf(w, "\n")
+			_, err = fmt.Fprintf(w, "\n")
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 
 	if containsCharData {
-		fmt.Fprintf(w, ">")
+		_, err = fmt.Fprintf(w, ">")
 	} else if !isSelfClosing {
-		fmt.Fprintf(w, ">\n")
+		_, err = fmt.Fprintf(w, ">\n")
 	} else {
-		fmt.Fprintf(w, " />\n")
+		_, err = fmt.Fprintf(w, " />\n")
 	}
+
+	return err
 }
 
-func (p Printer) startXLIFF(w io.Writer, attrs []xml.Attr) {
-	fmt.Fprintf(w, "<xliff:g")
+func (p Printer) startXLIFF(w io.Writer, attrs []xml.Attr) error {
+	_, err := fmt.Fprintf(w, "<xliff:g")
+	if err != nil {
+		return err
+	}
 
 	for _, a := range attrs {
-		fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
+		_, err = fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Fprintf(w, ">")
+	_, err = fmt.Fprintf(w, ">")
+	return err
 }
 
-func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int, isXLIFF bool) {
+func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int, isXLIFF bool) error {
 	if !containsCharData {
-		fmt.Fprint(w, duplicate(p.indent, depth))
+		_, err := fmt.Fprint(w, duplicate(p.indent, depth))
+		if err != nil {
+			return err
+		}
 	}
+
+	var err error
 	if isXLIFF {
-		fmt.Fprintf(w, "</xliff:%s>", name)
+		_, err = fmt.Fprintf(w, "</xliff:%s>", name)
 	} else {
-		fmt.Fprintf(w, "</%s>\n", name)
+		_, err = fmt.Fprintf(w, "</%s>\n", name)
 	}
+	return err
 }
 
-func (p Printer) charData(w io.Writer, value string) {
-	fmt.Fprint(w, value)
+func (p Printer) charData(w io.Writer, value string) error {
+	_, err := fmt.Fprint(w, value)
+	return err
 }
 
-func (p Printer) comment(w io.Writer, body string, depth int) {
-	fmt.Fprint(w, duplicate(p.indent, depth))
-	fmt.Fprintf(w, "<!--%s-->\n", body)
+func (p Printer) comment(w io.Writer, body string, depth int) error {
+	_, err := fmt.Fprint(w, duplicate(p.indent, depth))
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(w, "<!--%s-->\n", body)
+	return err
 }
 
-func printProcInst(w io.Writer, target string, inst string) {
-	fmt.Fprintf(w, "<?%s %s?>\n", target, inst)
+func printProcInst(w io.Writer, target string, inst string) error {
+	_, err := fmt.Fprintf(w, "<?%s %s?>\n", target, inst)
+	return err
 }
 
 func cleanAttrName(n xml.Name) string {
