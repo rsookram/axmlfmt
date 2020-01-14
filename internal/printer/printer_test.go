@@ -27,6 +27,19 @@ func TestStartXLIFF(t *testing.T) {
 	}
 }
 
+func TestEndElement(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	err := p.endElement(w, "androidx.constraintlayout.widget.ConstraintLayout", false, 1, false)
+	requireNoError(t, err)
+
+	expected := indent + "</androidx.constraintlayout.widget.ConstraintLayout>\n"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
 func TestEndXLIFF(t *testing.T) {
 	p := New(indent)
 
