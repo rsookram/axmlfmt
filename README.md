@@ -1,12 +1,124 @@
 # axmlfmt
 
-Autoformatting for Android XML files
+axmlfmt is an opinionated formatter for Android XML resources. It takes XML
+that looks like
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+
+    <!-- Not using AppCompat to reduce app size -->
+  <Toolbar
+      android:layout_width="match_parent"
+      android:id="@+id/toolbar"
+      android:layout_height="wrap_content"
+      android:title="@string/app_name"/>
+
+    <ScrollView
+        android:layout_weight="1"
+        android:layout_width="match_parent"
+      android:layout_height="0dp"
+        android:fillViewport="true">
+
+        <EditText
+                android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:importantForAutofill="no"
+            android:layout_height="wrap_content"
+            android:textSize="16sp">
+          </EditText>
+
+    </ScrollView>
+</LinearLayout>
+```
+
+and turns it into
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <!-- Not using AppCompat to reduce app size -->
+    <Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:title="@string/app_name" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:layout_weight="1">
+
+        <EditText
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:importantForAutofill="no"
+            android:textSize="16sp" />
+    </ScrollView>
+</LinearLayout>
+```
 
 
 ## Install
 
+Currently, pre-compiled binaries of axmlfmt aren't being distributed. You can
+install it with with the [`go` command](https://golang.org/doc/install) by
+running:
+
+```shell
+go install github.com/rsookram/axmlfmt/cmd/axmlfmt@latest
 ```
-$ go get -u github.com/rsookram/axmlfmt/cmd/axmlfmt
+
+
+## Usage
+
+One way you may want to use axmlfmt is to have it format all the XML files in a
+git repository. This can be done with the following command:
+
+```shell
+git ls-files '*.xml' | xargs axmlfmt -w
+```
+
+The full usage description is:
+
+```
+USAGE:
+    axmlfmt [FLAGS] [FILE]...
+
+FLAGS:
+    -h, -help, --help    Prints help information
+    -w                   Writes result to (source) file instead of stdout
+
+ARGS:
+    <FILE>...    Path of XML files to format
+```
+
+
+## Build
+
+axmlfmt can be built from source by cloning this repository and using the `go`
+command.
+
+```shell
+git clone https://github.com/rsookram/axmlfmt
+cd axmlfmt
+go build ./cmd/axmlfmt
 ```
 
 
