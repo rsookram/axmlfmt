@@ -12,10 +12,18 @@ import (
 
 const indent = "    "
 
+var Version = "development"
+
+var version = flag.Bool("V", false, "print version information")
 var write = flag.Bool("w", false, "write result to (source) file instead of stdout")
 
 func main() {
 	flag.Parse()
+
+	if *version {
+		fmt.Println("axmlfmt", Version)
+		return
+	}
 
 	filenames := flag.Args()
 

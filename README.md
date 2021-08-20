@@ -103,6 +103,7 @@ USAGE:
 
 FLAGS:
     -h, -help, --help    Prints help information
+    -V                   Prints version information
     -w                   Writes result to (source) file instead of stdout
 
 ARGS:
