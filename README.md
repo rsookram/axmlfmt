@@ -77,9 +77,10 @@ and turns it into
 
 ## Install
 
-Currently, pre-compiled binaries of axmlfmt aren't being distributed. You can
-install it with with the [`go` command](https://golang.org/doc/install) by
-running:
+Pre-compiled binaries of axmlfmt can be downloaded from
+[the releases page](https://github.com/rsookram/axmlfmt/releases).
+Alternatively, you can install it with with the
+[`go` command](https://golang.org/doc/install) by running:
 
 ```shell
 go install github.com/rsookram/axmlfmt/cmd/axmlfmt@latest
