@@ -23,6 +23,20 @@ func TestEmptyXML(t *testing.T) {
 	}
 }
 
+func TestTopLevelCharData(t *testing.T) {
+	doc := `test`
+
+	ee, err := read(doc)
+	if ee != nil {
+		t.Errorf("expected error, got %s", str(ee))
+	}
+
+	expected := "unexpected top-level char data `test`"
+	if err.Error() != expected {
+		t.Errorf("got %s, want %s", err.Error(), expected)
+	}
+}
+
 func TestElementContainingCommentNoChildren(t *testing.T) {
 	doc := `
 <shape

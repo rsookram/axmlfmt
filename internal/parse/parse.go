@@ -2,6 +2,7 @@ package parse
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -60,6 +61,10 @@ func ReadXML(reader xml.TokenReader) ([]Element, error) {
 		case xml.CharData:
 			s := string(token)
 			if len(strings.TrimSpace(s)) != 0 {
+				if depth == 0 {
+					return nil, fmt.Errorf("unexpected top-level char data `%s`", s)
+				}
+
 				parent := stack[len(stack)-1]
 				parent.ContainsCharData = true
 
