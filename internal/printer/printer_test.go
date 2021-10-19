@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"strings"
 	"testing"
+
+	"github.com/rsookram/axmlfmt/internal/parse"
 )
 
 const indent = "    "
@@ -13,7 +15,22 @@ func TestStartElement(t *testing.T) {
 
 	{
 		w := &strings.Builder{}
-		err := p.startElement(w, "resources", []xml.Attr{}, false, false, 0)
+		ee := []parse.Element{
+			{
+				Token: xml.StartElement{
+					Name: xml.Name{
+						Space: "",
+						Local: "resources",
+					},
+					Attr: []xml.Attr{},
+				},
+				Depth:            0,
+				IsSelfClosing:    false,
+				ContainsCharData: false,
+			},
+		}
+
+		err := p.Fprint(w, ee)
 		requireNoError(t, err)
 
 		expected := "<resources>\n"
@@ -27,16 +44,58 @@ func TestStartXLIFF(t *testing.T) {
 	p := New(indent)
 
 	w := &strings.Builder{}
-	err := p.startXLIFF(
-		w,
-		[]xml.Attr{
-			{Name: xml.Name{Space: "", Local: "example"}, Value: "2"},
-			{Name: xml.Name{Space: "", Local: "id"}, Value: "quantity"},
+	ee := []parse.Element{
+		{
+			Token: xml.StartElement{
+				Name: xml.Name{
+					Space: "urn:oasis:names:tc:xliff:document:1.2",
+					Local: "g",
+				},
+				Attr: []xml.Attr{
+					{Name: xml.Name{Space: "", Local: "example"}, Value: "2"},
+					{Name: xml.Name{Space: "", Local: "id"}, Value: "quantity"},
+				},
+			},
+			Depth:            1,
+			IsSelfClosing:    false,
+			ContainsCharData: true,
 		},
-	)
+	}
+
+	err := p.Fprint(w, ee)
 	requireNoError(t, err)
 
-	expected := `<xliff:g example="2" id="quantity">`
+	expected := indent + `<xliff:g example="2" id="quantity">`
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
+func TestStartAAPT(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	ee := []parse.Element{
+		{
+			Token: xml.StartElement{
+				Name: xml.Name{
+					Space: "http://schemas.android.com/aapt",
+					Local: "attr",
+				},
+				Attr: []xml.Attr{
+					{Name: xml.Name{Space: "", Local: "name"}, Value: "android:fillColor"},
+				},
+			},
+			Depth:            2,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
+	requireNoError(t, err)
+
+	expected := indent + indent + `<aapt:attr name="android:fillColor">` + "\n"
 	if w.String() != expected {
 		t.Errorf("got: %s, want %s", w.String(), expected)
 	}
@@ -46,7 +105,21 @@ func TestEndElement(t *testing.T) {
 	p := New(indent)
 
 	w := &strings.Builder{}
-	err := p.endElement(w, "androidx.constraintlayout.widget.ConstraintLayout", false, 1, false)
+	ee := []parse.Element{
+		{
+			Token: xml.EndElement{
+				Name: xml.Name{
+					Space: "",
+					Local: "androidx.constraintlayout.widget.ConstraintLayout",
+				},
+			},
+			Depth:            1,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
 	requireNoError(t, err)
 
 	expected := indent + "</androidx.constraintlayout.widget.ConstraintLayout>\n"
@@ -59,10 +132,51 @@ func TestEndXLIFF(t *testing.T) {
 	p := New(indent)
 
 	w := &strings.Builder{}
-	err := p.endElement(w, "g", true, 2, true)
+	ee := []parse.Element{
+		{
+			Token: xml.EndElement{
+				Name: xml.Name{
+					Space: "urn:oasis:names:tc:xliff:document:1.2",
+					Local: "g",
+				},
+			},
+			Depth:            2,
+			IsSelfClosing:    false,
+			ContainsCharData: true,
+		},
+	}
+
+	err := p.Fprint(w, ee)
 	requireNoError(t, err)
 
 	expected := "</xliff:g>"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
+func TestEndAAPT(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	ee := []parse.Element{
+		{
+			Token: xml.EndElement{
+				Name: xml.Name{
+					Space: "http://schemas.android.com/aapt",
+					Local: "attr",
+				},
+			},
+			Depth:            2,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
+	requireNoError(t, err)
+
+	expected := indent + indent + "</aapt:attr>"
 	if w.String() != expected {
 		t.Errorf("got: %s, want %s", w.String(), expected)
 	}
@@ -72,7 +186,16 @@ func TestCharData(t *testing.T) {
 	p := New(indent)
 
 	w := &strings.Builder{}
-	err := p.charData(w, "a string")
+	ee := []parse.Element{
+		{
+			Token:            xml.CharData("a string"),
+			Depth:            1,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
 	requireNoError(t, err)
 
 	expected := "a string"
@@ -86,7 +209,16 @@ func TestComment(t *testing.T) {
 
 	{
 		w := &strings.Builder{}
-		err := p.comment(w, "a comment", 0)
+		ee := []parse.Element{
+			{
+				Token:            xml.Comment("a comment"),
+				Depth:            0,
+				IsSelfClosing:    false,
+				ContainsCharData: false,
+			},
+		}
+
+		err := p.Fprint(w, ee)
 		requireNoError(t, err)
 
 		expected := "<!--a comment-->\n"
@@ -97,7 +229,16 @@ func TestComment(t *testing.T) {
 
 	{
 		w := &strings.Builder{}
-		err := p.comment(w, "a comment", 1)
+		ee := []parse.Element{
+			{
+				Token:            xml.Comment("a comment"),
+				Depth:            1,
+				IsSelfClosing:    false,
+				ContainsCharData: false,
+			},
+		}
+
+		err := p.Fprint(w, ee)
 		requireNoError(t, err)
 
 		expected := indent + "<!--a comment-->\n"
@@ -108,8 +249,22 @@ func TestComment(t *testing.T) {
 }
 
 func TestProcInst(t *testing.T) {
+	p := New(indent)
+
 	w := &strings.Builder{}
-	err := printProcInst(w, "xml", `version="1.0" encoding="utf-8"`)
+	ee := []parse.Element{
+		{
+			Token: xml.ProcInst{
+				Target: "xml",
+				Inst:   []byte(`version="1.0" encoding="utf-8"`),
+			},
+			Depth:            0,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
 	requireNoError(t, err)
 
 	expected := `<?xml version="1.0" encoding="utf-8"?>` + "\n"
