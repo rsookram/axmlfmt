@@ -65,7 +65,7 @@ func TestStartXLIFF(t *testing.T) {
 	err := p.Fprint(w, ee)
 	requireNoError(t, err)
 
-	expected := `<xliff:g example="2" id="quantity">`
+	expected := indent + `<xliff:g example="2" id="quantity">`
 	if w.String() != expected {
 		t.Errorf("got: %s, want %s", w.String(), expected)
 	}

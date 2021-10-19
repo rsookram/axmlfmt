@@ -28,13 +28,9 @@ func (p Printer) Fprint(w io.Writer, elements []parse.Element) error {
 		switch token := ele.Token.(type) {
 		case xml.StartElement:
 			attrs := sortAttrs(token.Attr)
-			if isXLIFF(token.Name) {
-				err = p.startXLIFF(w, attrs)
-			} else {
-				err = p.startElement(w, token.Name.Local, attrs, ele.IsSelfClosing, ele.ContainsCharData, depth)
-			}
+			err = p.startElement(w, token.Name, attrs, ele.IsSelfClosing, ele.ContainsCharData, depth)
 		case xml.EndElement:
-			err = p.endElement(w, token.Name.Local, ele.ContainsCharData, depth, isXLIFF(token.Name))
+			err = p.endElement(w, token.Name, ele.ContainsCharData, depth)
 		case xml.CharData:
 			err = p.charData(w, string(token))
 		case xml.Comment:
@@ -80,24 +76,30 @@ func isXLIFF(name xml.Name) bool {
 	return name.Space == "urn:oasis:names:tc:xliff:document:1.2" && name.Local == "g"
 }
 
-func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) error {
+func (p Printer) startElement(w io.Writer, name xml.Name, attrs []xml.Attr, isSelfClosing, containsCharData bool, depth int) error {
 	_, err := fmt.Fprint(w, duplicate(p.indent, depth))
 	if err != nil {
 		return err
+	}
+
+	ns := tagNamespace(name)
+	tagName := name.Local
+	if ns != "" {
+		tagName = ns + ":" + tagName
 	}
 
 	// Elements without attrs look like `<requestFocus />` or `<resources>`
 	// and elements with one attr look like
 	// `<string name="app_name">` or `<menu xmlns:android="...">`
 	hasAttrs := len(attrs) == 0
-	isSingleAttr := len(attrs) == 1
+	isSingleLine := len(attrs) == 1 || containsCharData
 	if hasAttrs {
-		_, err = fmt.Fprintf(w, "<%s", name)
+		_, err = fmt.Fprintf(w, "<%s", tagName)
 	} else {
-		if isSingleAttr {
-			_, err = fmt.Fprintf(w, "<%s", name)
+		if isSingleLine {
+			_, err = fmt.Fprintf(w, "<%s", tagName)
 		} else {
-			_, err = fmt.Fprintf(w, "<%s\n", name)
+			_, err = fmt.Fprintf(w, "<%s\n", tagName)
 		}
 	}
 	if err != nil {
@@ -106,14 +108,14 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelf
 
 	attrIndent := duplicate(p.indent, depth+1)
 	for i, a := range attrs {
-		if isSingleAttr {
+		if isSingleLine {
 			_, err = fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
 		} else {
 			_, err = fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
 		}
 
 		// The last attribute is on the same line as the ">"
-		if i != len(attrs)-1 {
+		if i != len(attrs)-1 && !isSingleLine {
 			_, err = fmt.Fprintf(w, "\n")
 		}
 
@@ -133,24 +135,7 @@ func (p Printer) startElement(w io.Writer, name string, attrs []xml.Attr, isSelf
 	return err
 }
 
-func (p Printer) startXLIFF(w io.Writer, attrs []xml.Attr) error {
-	_, err := fmt.Fprintf(w, "<xliff:g")
-	if err != nil {
-		return err
-	}
-
-	for _, a := range attrs {
-		_, err = fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = fmt.Fprintf(w, ">")
-	return err
-}
-
-func (p Printer) endElement(w io.Writer, name string, containsCharData bool, depth int, isXLIFF bool) error {
+func (p Printer) endElement(w io.Writer, name xml.Name, containsCharData bool, depth int) error {
 	if !containsCharData {
 		_, err := fmt.Fprint(w, duplicate(p.indent, depth))
 		if err != nil {
@@ -159,10 +144,11 @@ func (p Printer) endElement(w io.Writer, name string, containsCharData bool, dep
 	}
 
 	var err error
-	if isXLIFF {
-		_, err = fmt.Fprintf(w, "</xliff:%s>", name)
+	ns := tagNamespace(name)
+	if ns != "" {
+		_, err = fmt.Fprintf(w, "</%s:%s>", ns, name.Local)
 	} else {
-		_, err = fmt.Fprintf(w, "</%s>\n", name)
+		_, err = fmt.Fprintf(w, "</%s>\n", name.Local)
 	}
 	return err
 }
@@ -204,6 +190,15 @@ func cleanAttrName(n xml.Name) string {
 	}
 
 	return fmt.Sprintf("%s:%s", space, n.Local)
+}
+
+func tagNamespace(n xml.Name) string {
+	switch n.Space {
+	case "urn:oasis:names:tc:xliff:document:1.2":
+		return "xliff"
+	default:
+		return ""
+	}
 }
 
 func duplicate(s string, n int) string {
