@@ -71,6 +71,36 @@ func TestStartXLIFF(t *testing.T) {
 	}
 }
 
+func TestStartAAPT(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	ee := []parse.Element{
+		{
+			Token: xml.StartElement{
+				Name: xml.Name{
+					Space: "http://schemas.android.com/aapt",
+					Local: "attr",
+				},
+				Attr: []xml.Attr{
+					{Name: xml.Name{Space: "", Local: "name"}, Value: "android:fillColor"},
+				},
+			},
+			Depth:            2,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
+	requireNoError(t, err)
+
+	expected := indent + indent + `<aapt:attr name="android:fillColor">` + "\n"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
 func TestEndElement(t *testing.T) {
 	p := New(indent)
 
@@ -120,6 +150,33 @@ func TestEndXLIFF(t *testing.T) {
 	requireNoError(t, err)
 
 	expected := "</xliff:g>"
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
+func TestEndAAPT(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	ee := []parse.Element{
+		{
+			Token: xml.EndElement{
+				Name: xml.Name{
+					Space: "http://schemas.android.com/aapt",
+					Local: "attr",
+				},
+			},
+			Depth:            2,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
+	requireNoError(t, err)
+
+	expected := indent + indent + "</aapt:attr>"
 	if w.String() != expected {
 		t.Errorf("got: %s, want %s", w.String(), expected)
 	}

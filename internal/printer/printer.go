@@ -196,6 +196,8 @@ func tagNamespace(n xml.Name) string {
 	switch n.Space {
 	case "urn:oasis:names:tc:xliff:document:1.2":
 		return "xliff"
+	case "http://schemas.android.com/aapt":
+		return "aapt"
 	default:
 		return ""
 	}
