@@ -101,6 +101,46 @@ func TestStartAAPT(t *testing.T) {
 	}
 }
 
+func TestStandardizeNamespaceName(t *testing.T) {
+	p := New(indent)
+
+	w := &strings.Builder{}
+	ee := []parse.Element{
+		{
+			Token: xml.StartElement{
+				Name: xml.Name{
+					Space: "",
+					Local: "androidx.cardview.widget.CardView",
+				},
+				Attr: []xml.Attr{
+					{Name: xml.Name{Space: "xmlns", Local: "android"}, Value: "http://schemas.android.com/apk/res/android"},
+					{Name: xml.Name{Space: "xmlns", Local: "card_view"}, Value: "http://schemas.android.com/apk/res-auto"},
+					{Name: xml.Name{Space: "http://schemas.android.com/apk/res/android", Local: "layout_width"}, Value: "match_parent"},
+					{Name: xml.Name{Space: "http://schemas.android.com/apk/res/android", Local: "layout_height"}, Value: "wrap_content"},
+					{Name: xml.Name{Space: "http://schemas.android.com/apk/res-auto", Local: "cardCornerRadius"}, Value: "4dp"},
+				},
+			},
+			Depth:            0,
+			IsSelfClosing:    false,
+			ContainsCharData: false,
+		},
+	}
+
+	err := p.Fprint(w, ee)
+	requireNoError(t, err)
+
+	expected := `<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="4dp">
+`
+	if w.String() != expected {
+		t.Errorf("got: %s, want %s", w.String(), expected)
+	}
+}
+
 func TestEndElement(t *testing.T) {
 	p := New(indent)
 

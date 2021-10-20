@@ -109,9 +109,9 @@ func (p Printer) startElement(w io.Writer, name xml.Name, attrs []xml.Attr, isSe
 	attrIndent := duplicate(p.indent, depth+1)
 	for i, a := range attrs {
 		if isSingleLine {
-			_, err = fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a.Name), a.Value)
+			_, err = fmt.Fprintf(w, " %s=\"%s\"", cleanAttrName(a), a.Value)
 		} else {
-			_, err = fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a.Name), a.Value)
+			_, err = fmt.Fprintf(w, "%s%s=\"%s\"", attrIndent, cleanAttrName(a), a.Value)
 		}
 
 		// The last attribute is on the same line as the ">"
@@ -173,23 +173,39 @@ func printProcInst(w io.Writer, target string, inst string) error {
 	return err
 }
 
-func cleanAttrName(n xml.Name) string {
-	space := n.Space
+func cleanAttrName(a xml.Attr) string {
+	space := a.Name.Space
 	if space == "" {
 		// Attributes not in a namespace such as style
-		return n.Local
+		return a.Name.Local
 	}
 
-	switch space {
+	space = standardizeNamespace(space)
+
+	name := a.Name.Local
+	if space == "xmlns" {
+		name = standardizeNamespace(a.Value)
+		if name == "" {
+			name = a.Name.Local
+		}
+	}
+
+	return fmt.Sprintf("%s:%s", space, name)
+}
+
+func standardizeNamespace(ns string) string {
+	switch ns {
 	case "http://schemas.android.com/apk/res/android":
-		space = "android"
+		return "android"
 	case "http://schemas.android.com/apk/res-auto":
-		space = "app"
+		return "app"
 	case "http://schemas.android.com/tools":
-		space = "tools"
+		return "tools"
+	case "xmlns":
+		return "xmlns"
+	default:
+		return ""
 	}
-
-	return fmt.Sprintf("%s:%s", space, n.Local)
 }
 
 func tagNamespace(n xml.Name) string {
