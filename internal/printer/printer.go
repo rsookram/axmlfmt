@@ -154,8 +154,7 @@ func (p Printer) endElement(w io.Writer, name xml.Name, containsCharData bool, d
 }
 
 func (p Printer) charData(w io.Writer, value string) error {
-	_, err := fmt.Fprint(w, value)
-	return err
+	return xml.EscapeText(w, []byte(value))
 }
 
 func (p Printer) comment(w io.Writer, body string, depth int) error {

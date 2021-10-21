@@ -37,6 +37,44 @@ func TestTopLevelCharData(t *testing.T) {
 	}
 }
 
+func TestCharDataWithCDATA(t *testing.T) {
+	doc := `
+	<string>
+		<![CDATA[<i>]]>
+	</string>
+	`
+
+	ee, err := read(doc)
+	if err != nil {
+		t.Errorf("got %s", err)
+	}
+
+	expected := []Element{
+		{
+			Token: xml.StartElement{
+				Name: tagName("", "string"),
+				Attr: []xml.Attr{},
+			},
+			// TODO: Ideally IsSelfClosing and ContainsCharData shouldn't both be true at the same time, but
+			// right now, it doesn't matter in practice (ContainsCharData takes precedence)
+			IsSelfClosing:    true,
+			ContainsCharData: true,
+		},
+		{
+			Token: xml.CharData("<i>"),
+			Depth: 1,
+		},
+		{
+			Token:            endElement("", "string"),
+			ContainsCharData: true,
+		},
+	}
+
+	if !equal(expected, ee) {
+		t.Errorf("got %s, want %s", str(ee), str(expected))
+	}
+}
+
 func TestElementContainingCommentNoChildren(t *testing.T) {
 	doc := `
 <shape
