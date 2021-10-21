@@ -225,22 +225,44 @@ func TestEndAAPT(t *testing.T) {
 func TestCharData(t *testing.T) {
 	p := New(indent)
 
-	w := &strings.Builder{}
-	ee := []parse.Element{
-		{
-			Token:            xml.CharData("a string"),
-			Depth:            1,
-			IsSelfClosing:    false,
-			ContainsCharData: false,
-		},
+	{
+		w := &strings.Builder{}
+		ee := []parse.Element{
+			{
+				Token:            xml.CharData("a string"),
+				Depth:            1,
+				IsSelfClosing:    false,
+				ContainsCharData: false,
+			},
+		}
+
+		err := p.Fprint(w, ee)
+		requireNoError(t, err)
+
+		expected := "a string"
+		if w.String() != expected {
+			t.Errorf("got: %s, want %s", w.String(), expected)
+		}
 	}
 
-	err := p.Fprint(w, ee)
-	requireNoError(t, err)
+	{
+		w := &strings.Builder{}
+		ee := []parse.Element{
+			{
+				Token:            xml.CharData("<b> & </b>"),
+				Depth:            1,
+				IsSelfClosing:    false,
+				ContainsCharData: false,
+			},
+		}
 
-	expected := "a string"
-	if w.String() != expected {
-		t.Errorf("got: %s, want %s", w.String(), expected)
+		err := p.Fprint(w, ee)
+		requireNoError(t, err)
+
+		expected := "&lt;b&gt; &amp; &lt;/b&gt;"
+		if w.String() != expected {
+			t.Errorf("got: %s, want %s", w.String(), expected)
+		}
 	}
 }
 
